@@ -17,7 +17,7 @@ export function useDataLoader<T>(filename: string) {
     if (fetchedRef.current) return
     fetchedRef.current = true
 
-    fetch(`./data/${filename}`)
+    fetch(`${import.meta.env.BASE_URL}data/${filename}`)
       .then(r => { if (!r.ok) throw new Error(`Failed: ${filename}`); return r.json() })
       .then((json: T) => { cache.set(filename, json); setData(json); setLoading(false) })
       .catch(e => { setError(e.message); setLoading(false) })
