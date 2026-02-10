@@ -8,7 +8,7 @@ import { BilateralFlowMap } from './views/BilateralFlowMap'
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <DataProvider>
         <div className="min-h-screen bg-slate-950">
           <Header />
