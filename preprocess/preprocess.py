@@ -40,6 +40,7 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 # Constants
 # ---------------------------------------------------------------------------
 PRELIMINARY_YEARS = [2024]
+EXCLUDE_YEARS = {2024}  # Years to exclude from all output
 TOP_N_BILATERAL_PER_MODE = 100
 TOP_N_BILATERAL_PER_COMMODITY = 50
 BILATERAL_CHUNKSIZE = 500_000
@@ -283,6 +284,7 @@ def write_json(data: dict | list, filename: str) -> None:
 def process_global_timeseries() -> None:
     print("\n[1/10] Processing global timeseries ...")
     df = pd.read_csv(TIMESERIES_DIR / "global_emissions_by_year.csv")
+    df = df[~df["Year"].isin(EXCLUDE_YEARS)]
 
     result = {
         "years": [int(y) for y in df["Year"]],
@@ -308,6 +310,7 @@ def process_global_by_mode() -> None:
         return
 
     df = pd.read_csv(mode_path)
+    df = df[~df["Year"].isin(EXCLUDE_YEARS)]
 
     result: dict[str, list] = {}
     for _, row in df.iterrows():
@@ -332,6 +335,7 @@ def process_global_by_mode() -> None:
 def process_consumer_countries() -> None:
     print("\n[2/10] Processing consumer countries ...")
     df = pd.read_csv(TIMESERIES_DIR / "emissions_by_consumer_country_year.csv")
+    df = df[~df["Year"].isin(EXCLUDE_YEARS)]
 
     result: dict[str, dict] = {}
     for _, row in df.iterrows():
@@ -361,6 +365,7 @@ def process_consumer_countries() -> None:
 def process_producer_countries() -> None:
     print("\n[3/10] Processing producer countries ...")
     df = pd.read_csv(TIMESERIES_DIR / "emissions_by_producer_country_year.csv")
+    df = df[~df["Year"].isin(EXCLUDE_YEARS)]
 
     result: dict[str, dict] = {}
     for _, row in df.iterrows():
@@ -389,6 +394,7 @@ def process_producer_countries() -> None:
 def process_commodities() -> None:
     print("\n[4/10] Processing commodities ...")
     df = pd.read_csv(TIMESERIES_DIR / "emissions_by_commodity_year.csv")
+    df = df[~df["Year"].isin(EXCLUDE_YEARS)]
 
     # New data uses "commodity_name" instead of "commodity_name_x"
     comm_col = "commodity_name" if "commodity_name" in df.columns else "commodity_name_x"
@@ -462,8 +468,8 @@ def process_bilateral_top_flows() -> None:
             f"({elapsed:.1f}s elapsed)"
         )
 
-        # Keep only bilateral flows
-        chunk = chunk[chunk["route_type"].str.lower() == "bilateral"]
+        # Keep only bilateral flows, exclude certain years
+        chunk = chunk[(chunk["route_type"].str.lower() == "bilateral") & (~chunk["Year"].isin(EXCLUDE_YEARS))]
         if chunk.empty:
             continue
 
@@ -610,7 +616,7 @@ def process_bilateral_by_commodity() -> None:
             f"({elapsed:.1f}s elapsed)"
         )
 
-        chunk = chunk[chunk["route_type"].str.lower() == "bilateral"]
+        chunk = chunk[(chunk["route_type"].str.lower() == "bilateral") & (~chunk["Year"].isin(EXCLUDE_YEARS))]
         if chunk.empty:
             continue
 
@@ -800,7 +806,7 @@ def process_dropdown_lists() -> None:
     countries.sort(key=lambda c: c["name"])
 
     global_df = pd.read_csv(TIMESERIES_DIR / "global_emissions_by_year.csv")
-    years = sorted(int(y) for y in global_df["Year"].unique())
+    years = sorted(int(y) for y in global_df["Year"].unique() if int(y) not in EXCLUDE_YEARS)
 
     result = {
         "commodities": commodities,
